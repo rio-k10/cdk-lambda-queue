@@ -4,6 +4,9 @@ import * as path from 'path';
 import * as lambda from 'aws-cdk-lib/aws-lambda';
 import * as apigateway from 'aws-cdk-lib/aws-apigateway';
 import * as logs from 'aws-cdk-lib/aws-logs';
+import * as sns from 'aws-cdk-lib/aws-sns';
+import * as subscriptions from 'aws-cdk-lib/aws-sns-subscriptions';
+import * as iam from 'aws-cdk-lib/aws-iam';
 
 interface Props extends StackProps {
   namePrefix: string;
@@ -13,6 +16,10 @@ export class MessageHandlerStack extends Stack {
   constructor(scope: Construct, id: string, props: Props) {
     super(scope, id, props);
     const { namePrefix } = props;
+
+    const topic = new sns.Topic(this, `${namePrefix}Topic`, {
+      topicName: `${namePrefix}MessageTopic`
+    });
 
     const handler = new lambda.Function(
       this,
@@ -24,16 +31,36 @@ export class MessageHandlerStack extends Stack {
         code: lambda.Code.fromAsset(
           path.join(__dirname, '../../services/message-handler')
         ),
-        logRetention: logs.RetentionDays.ONE_WEEK
+        environment: {
+          TOPIC_ARN: topic.topicArn
+        }
       }
     );
 
+    topic.grantPublish(handler);
+
+    handler.addToRolePolicy(
+      new iam.PolicyStatement({
+        actions: [
+          'logs:CreateLogGroup',
+          'logs:CreateLogStream',
+          'logs:PutLogEvents'
+        ],
+        resources: ['*']
+      })
+    );
+
+    new logs.LogGroup(this, `${namePrefix}HandlerLogGroup`, {
+      logGroupName: `/aws/lambda/${handler.functionName}`,
+      removalPolicy: RemovalPolicy.DESTROY
+    });
+
+    topic.addSubscription(new subscriptions.LambdaSubscription(handler));
+
     new apigateway.LambdaRestApi(this, `${namePrefix}SimpleMessageGateway`, {
       restApiName: `${namePrefix}SimpleMessageGateway`,
-      handler,
-      deployOptions: {
-        stageName: 'dev'
-      }
+      handler: handler,
+      deployOptions: { stageName: 'dev' }
     });
   }
 }
