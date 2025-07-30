@@ -3,9 +3,8 @@ const sns = new AWS.SNS();
 
 exports.handler = async (event, context) => {
   console.log('Received event:', JSON.stringify(event, null, 2));
-  console.log('Function ARN:', context.invokedFunctionArn);
 
-  const message = JSON.stringify(event.body);
+  const message = JSON.stringify(event.body || event);
   const topicArn = process.env.TOPIC_ARN;
 
   try {
@@ -16,23 +15,18 @@ exports.handler = async (event, context) => {
       })
       .promise();
 
-    console.log('Message published to SNS:', result.MessageId);
+    console.log('Message published:', result.MessageId);
 
     return {
       statusCode: 200,
-      body: JSON.stringify({
-        message: 'Message pushed to topic.',
-        messageId: result.MessageId
-      })
+      body: JSON.stringify({ messageId: result.MessageId })
     };
   } catch (error) {
-    console.error('Failed to publish message to SNS:', error);
+    console.error('Publish failed:', error);
 
     return {
       statusCode: 500,
-      body: JSON.stringify({
-        error: 'Failed to publish message to topic.'
-      })
+      body: JSON.stringify({ error: 'Publish failed' })
     };
   }
 };

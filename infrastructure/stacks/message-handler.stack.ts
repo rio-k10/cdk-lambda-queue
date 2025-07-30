@@ -1,11 +1,12 @@
-import { Stack, StackProps, RemovalPolicy } from 'aws-cdk-lib';
+import { Stack, StackProps, RemovalPolicy, Duration } from 'aws-cdk-lib';
 import { Construct } from 'constructs';
 import * as path from 'path';
 import * as lambda from 'aws-cdk-lib/aws-lambda';
 import * as apigateway from 'aws-cdk-lib/aws-apigateway';
-import * as logs from 'aws-cdk-lib/aws-logs';
 import * as sns from 'aws-cdk-lib/aws-sns';
+import * as sqs from 'aws-cdk-lib/aws-sqs';
 import * as subscriptions from 'aws-cdk-lib/aws-sns-subscriptions';
+import * as eventSources from 'aws-cdk-lib/aws-lambda-event-sources';
 import * as iam from 'aws-cdk-lib/aws-iam';
 
 interface Props extends StackProps {
@@ -21,40 +22,63 @@ export class MessageHandlerStack extends Stack {
       topicName: `${namePrefix}MessageTopic`
     });
 
-    const handler = new lambda.Function(
-      this,
-      `${namePrefix}SimpleMessageHandlerLambda`,
-      {
-        functionName: `${namePrefix}message-handler-lambda`,
-        runtime: lambda.Runtime.NODEJS_18_X,
-        handler: 'index.handler',
-        code: lambda.Code.fromAsset(
-          path.join(__dirname, '../../services/message-handler')
-        ),
-        environment: {
-          TOPIC_ARN: topic.topicArn
-        }
+    const queue = new sqs.Queue(this, `${namePrefix}Queue`, {
+      queueName: `${namePrefix}MessageQueue`,
+      visibilityTimeout: Duration.seconds(30),
+      removalPolicy: RemovalPolicy.DESTROY
+    });
+
+    topic.addSubscription(new subscriptions.SqsSubscription(queue));
+
+    const producer = new lambda.Function(this, `${namePrefix}ProducerLambda`, {
+      functionName: `${namePrefix}producer-lambda`,
+      runtime: lambda.Runtime.NODEJS_18_X,
+      handler: 'index.handler',
+      code: lambda.Code.fromAsset(
+        path.join(__dirname, '../../services/message-handler')
+      ),
+      environment: {
+        TOPIC_ARN: topic.topicArn
       }
-    );
+    });
 
-    topic.grantPublish(handler);
+    const consumer = new lambda.Function(this, `${namePrefix}ConsumerLambda`, {
+      functionName: `${namePrefix}consumer-lambda`,
+      runtime: lambda.Runtime.NODEJS_18_X,
+      handler: 'index.handler',
+      code: lambda.Code.fromAsset(
+        path.join(__dirname, '../../services/message-consumer')
+      )
+    });
 
-    handler.addToRolePolicy(
-      new iam.PolicyStatement({
-        actions: [
-          'logs:CreateLogGroup',
-          'logs:CreateLogStream',
-          'logs:PutLogEvents'
-        ],
-        resources: ['*']
+    // Attach SQS event source to consumer Lambda
+    consumer.addEventSource(
+      new eventSources.SqsEventSource(queue, {
+        batchSize: 1
       })
     );
 
-    topic.addSubscription(new subscriptions.LambdaSubscription(handler));
+    // Allow logging
+    const lambdas = [producer, consumer];
+    lambdas.forEach((fn) => {
+      fn.addToRolePolicy(
+        new iam.PolicyStatement({
+          actions: [
+            'logs:CreateLogGroup',
+            'logs:CreateLogStream',
+            'logs:PutLogEvents'
+          ],
+          resources: ['*']
+        })
+      );
+    });
 
-    new apigateway.LambdaRestApi(this, `${namePrefix}SimpleMessageGateway`, {
-      restApiName: `${namePrefix}SimpleMessageGateway`,
-      handler: handler,
+    // Allow producer to publish to SNS
+    topic.grantPublish(producer);
+
+    new apigateway.LambdaRestApi(this, `${namePrefix}ApiGateway`, {
+      restApiName: `${namePrefix}Api`,
+      handler: producer,
       deployOptions: { stageName: 'dev' }
     });
   }
