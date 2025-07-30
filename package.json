@@ -5,15 +5,7 @@
     "cdk-lambda-queue-prototype": "bin/cdk-lambda-queue-prototype.js"
   },
   "scripts": {
-    "load-env": "powershell -ExecutionPolicy Bypass -File ./scripts/load-env.ps1",
-    "build": "tsc",
-    "check-auth": "aws sts get-caller-identity --profile tmsandbox",
-    "plan": "npm run load-env && npm run build && npm run check-auth && cdk synth --profile tmsandbox -c user_initials=RK",
-    "apply": "npm run load-env && npm run check-auth && cdk deploy --all --profile tmsandbox -c user_initials=RK",
-    "destroy": "npm run load-env && npm run check-auth && cdk destroy --all --profile tmsandbox -c user_initials=RK",
-    "diff": "npm run load-env && cdk diff --profile tmsandbox -c user_initials=RK",
-    "bootstrap": "cdk bootstrap --toolkit-stack-name SMCDK-Toolkit --bootstrap-qualifier SMCDK --profile tmsandbox -c user_initials=RK",
-    "lint": "eslint . --ext .ts"
+    "build": "tsc"
   },
   "devDependencies": {
     "@types/jest": "^29.5.14",

@@ -50,11 +50,6 @@ export class MessageHandlerStack extends Stack {
       })
     );
 
-    new logs.LogGroup(this, `${namePrefix}HandlerLogGroup`, {
-      logGroupName: `/aws/lambda/${handler.functionName}`,
-      removalPolicy: RemovalPolicy.DESTROY
-    });
-
     topic.addSubscription(new subscriptions.LambdaSubscription(handler));
 
     new apigateway.LambdaRestApi(this, `${namePrefix}SimpleMessageGateway`, {
