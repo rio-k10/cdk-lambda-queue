@@ -17,6 +17,7 @@ check-env:
 		exit 1; \
 	fi
 	@echo "Environment loaded."
+	aws sts get-caller-identity --profile $(AWS_PROFILE)
 
 plan: check-env
 	npm run build
@@ -28,7 +29,6 @@ apply: check-env
 	cdk deploy --all --profile $(AWS_PROFILE) -c user_initials=$(USER_INITIALS)
 
 destroy: check-env
-	aws sts get-caller-identity --profile $(AWS_PROFILE)
 	cdk destroy --all --profile $(AWS_PROFILE) -c user_initials=$(USER_INITIALS)
 
 bootstrap: check-env
