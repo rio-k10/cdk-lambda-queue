@@ -52,7 +52,7 @@ Make sure you have the following installed globally:
 ---
 
 - **Powershell Package Manager**  
-  [Install Choco]https://chocolatey.org/install)
+  [Install Choco](https://chocolatey.org/install)
 
   ```powershell
   choco --version
@@ -92,8 +92,7 @@ Make sure you have the following installed globally:
 
 ---
 
-- **Make CLI** (Windows)  
-  Install via Chocolatey:
+- **Make CLI**
 
   ```powershell
   choco install make
@@ -101,9 +100,7 @@ Make sure you have the following installed globally:
 
 ---
 
-- **AWS CDK CLI**  
-  [Install CDK](https://docs.aws.amazon.com/cdk/v2/guide/cli.html)
-
+- **AWS NODE CDK**
   ```powershell
   npm install -g aws-cdk
   cdk --version
