@@ -87,7 +87,7 @@ Make sure you have the following installed globally:
   Confirm version:
 
   ```powershell
-  node -v
+  node --version
   ```
 
 ---
@@ -96,6 +96,7 @@ Make sure you have the following installed globally:
 
   ```powershell
   choco install make
+  make --version
   ```
 
 ---
