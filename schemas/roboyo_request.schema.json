@@ -1,0 +1,18 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "RoboyoRequest",
+  "type": "object",
+  "required": [
+    "requestId",
+    "payload"
+  ],
+  "properties": {
+    "requestId": {
+      "type": "string"
+    },
+    "payload": {
+      "type": "object"
+    }
+  },
+  "additionalProperties": true
+}

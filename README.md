@@ -4,7 +4,37 @@ This project is a prototype AWS CDK stack that deploys an SQS queue with a Lambd
 
 ---
 
-## 🛠 Local Setup
+## Endpoints
+
+- `POST /uipath/documents` — send a UiPath-like document payload
+- `POST /roboyo/requests` — send a Roboyo-like request payload
+- `GET /health` — health check
+
+## Sample payloads
+
+### UiPath
+
+```json
+{
+  "documentId": "doc-123",
+  "fileName": "test.pdf",
+  "metadata": { "case": "CON29" }
+}
+```
+
+### Roboyo
+
+```json
+{ "requestId": "req-123", "payload": { "type": "search", "query": "LLC1" } }
+```
+
+Messages are published to SNS with `messageType` attribute (`UiPathDocument|RoboyoRequest`) and consumed via SQS. Consumer writes to DynamoDB with keys:
+
+```json
+{ "id": "<snsMessageId>", "type": "<messageType>", "payload": { ... } }
+```
+
+## Local Setup
 
 ### 1. Install Prerequisites
 
@@ -30,7 +60,7 @@ Make sure you have the following installed globally:
 
 - **Make CLI** (Windows)
 
-  - Install via [GnuWin32](http://gnuwin32.sourceforge.net/packages/make.htm) or use **Git Bash**, **WSL**, or [Chocolatey](https://community.chocolatey.org/packages/make):
+  - [Chocolatey](https://community.chocolatey.org/packages/make):
 
     ```powershell
     choco install make
@@ -90,7 +120,8 @@ USER_INITIALS=XY        # Your initials or unique identifier
 
 ## 🧪 Commands (via Makefile)
 
-The following `make` commands are available for consistent workflows:
+The following `make` commands are available for consistent workflows
+[NOTE: Make files rely on Git Bash, use the integrated VSCode terminal or search 'Git Bash' in the start menu]:
 
 | Command          | Description                                                     |
 | ---------------- | --------------------------------------------------------------- |

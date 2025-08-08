@@ -3,29 +3,51 @@ const { SNSClient, PublishCommand } = require('@aws-sdk/client-sns');
 const sns = new SNSClient({});
 
 exports.handler = async (event) => {
-  console.log('Received event:', JSON.stringify(event, null, 2));
+  const path = event?.path || '/';
+  const method = (event?.httpMethod || 'GET').toUpperCase();
 
-  const message =
-    typeof event?.body === 'string'
-      ? event.body
-      : JSON.stringify(event?.body ?? event);
-  const topicArn = process.env.TOPIC_ARN;
+  if (method === 'GET' && path === '/health') {
+    return { statusCode: 200, body: JSON.stringify({ ok: true }) };
+  }
 
-  try {
-    const out = await sns.send(
-      new PublishCommand({ TopicArn: topicArn, Message: message })
-    );
-    console.log('Message published:', out.MessageId);
-
+  if (method !== 'POST') {
     return {
-      statusCode: 200,
-      body: JSON.stringify({ messageId: out.MessageId })
-    };
-  } catch (error) {
-    console.error('Publish failed:', error);
-    return {
-      statusCode: 500,
-      body: JSON.stringify({ error: 'Publish failed' })
+      statusCode: 405,
+      body: JSON.stringify({ error: 'Method Not Allowed' })
     };
   }
+
+  let body = event.body;
+  try {
+    if (typeof body === 'string') body = JSON.parse(body);
+  } catch (_) {
+    // leave as string if not JSON
+  }
+
+  const type = path.startsWith('/uipath')
+    ? 'UiPathDocument'
+    : path.startsWith('/roboyo')
+    ? 'RoboyoRequest'
+    : 'GenericMessage';
+
+  const topicArn = process.env.TOPIC_ARN;
+  const message = typeof body === 'string' ? body : JSON.stringify(body ?? {});
+
+  const attrs = {
+    messageType: { DataType: 'String', StringValue: type },
+    sourcePath: { DataType: 'String', StringValue: path }
+  };
+
+  const out = await sns.send(
+    new PublishCommand({
+      TopicArn: topicArn,
+      Message: message,
+      MessageAttributes: attrs
+    })
+  );
+
+  return {
+    statusCode: 200,
+    body: JSON.stringify({ messageId: out.MessageId, type })
+  };
 };

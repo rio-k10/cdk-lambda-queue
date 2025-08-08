@@ -10,8 +10,8 @@ import * as subscriptions from 'aws-cdk-lib/aws-sns-subscriptions';
 import * as eventSources from 'aws-cdk-lib/aws-lambda-event-sources';
 import * as iam from 'aws-cdk-lib/aws-iam';
 import * as logs from 'aws-cdk-lib/aws-logs';
+import * as dynamodb from 'aws-cdk-lib/aws-dynamodb';
 import { NodejsFunction } from 'aws-cdk-lib/aws-lambda-nodejs';
-import { RetentionDays } from 'aws-cdk-lib/aws-logs';
 
 interface Props extends StackProps {
   namePrefix: string;
@@ -22,23 +22,52 @@ export class MessageHandlerStack extends Stack {
     super(scope, id, props);
     const { namePrefix } = props;
 
+    // SNS Topic
     const topic = new sns.Topic(this, `${namePrefix}Topic`, {
       topicName: `${namePrefix}MessageTopic`
     });
 
+    // SQS Queue + DLQ (for sandbox safety)
+    const dlq = new sqs.Queue(this, `${namePrefix}DLQ`, {
+      queueName: `${namePrefix}MessageDLQ`,
+      retentionPeriod: Duration.days(14),
+      removalPolicy: RemovalPolicy.DESTROY
+    });
+
     const queue = new sqs.Queue(this, `${namePrefix}Queue`, {
       queueName: `${namePrefix}MessageQueue`,
-      visibilityTimeout: Duration.seconds(30),
+      visibilityTimeout: Duration.seconds(90), // >= 6x Lambda timeout is a good rule
+      deadLetterQueue: { queue: dlq, maxReceiveCount: 5 },
       removalPolicy: RemovalPolicy.DESTROY
     });
 
     topic.addSubscription(new subscriptions.SqsSubscription(queue));
 
+    // DynamoDB (document-y)
+    const table = new dynamodb.Table(this, `${namePrefix}MessageTable`, {
+      tableName: `${namePrefix}MessageTable`,
+      partitionKey: { name: 'id', type: dynamodb.AttributeType.STRING },
+      billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
+      pointInTimeRecovery: true,
+      removalPolicy: RemovalPolicy.DESTROY // sandbox
+    });
+
+    // Log groups (explicit to avoid CFN "already exists" clashes)
     const producerLogGroup = new logs.LogGroup(
       this,
       `${namePrefix}ProducerLambdaLogGroup`,
       {
         logGroupName: `/aws/lambda/${namePrefix}producer-lambda`,
+        retention: logs.RetentionDays.ONE_WEEK,
+        removalPolicy: cdk.RemovalPolicy.DESTROY
+      }
+    );
+
+    const consumerLogGroup = new logs.LogGroup(
+      this,
+      `${namePrefix}ConsumerLambdaLogGroup`,
+      {
+        logGroupName: `/aws/lambda/${namePrefix}consumer-lambda`,
         retention: logs.RetentionDays.ONE_WEEK,
         removalPolicy: cdk.RemovalPolicy.DESTROY
       }
@@ -59,18 +88,9 @@ export class MessageHandlerStack extends Stack {
       },
       environment: {
         TOPIC_ARN: topic.topicArn
-      }
+      },
+      tracing: lambda.Tracing.ACTIVE
     });
-
-    const consumerLogGroup = new logs.LogGroup(
-      this,
-      `${namePrefix}ConsumerLambdaLogGroup`,
-      {
-        logGroupName: `/aws/lambda/${namePrefix}consumer-lambda`,
-        retention: logs.RetentionDays.ONE_WEEK,
-        removalPolicy: cdk.RemovalPolicy.DESTROY
-      }
-    );
 
     const consumer = new NodejsFunction(this, `${namePrefix}ConsumerLambda`, {
       functionName: `${namePrefix}consumer-lambda`,
@@ -78,21 +98,29 @@ export class MessageHandlerStack extends Stack {
       handler: 'handler',
       runtime: lambda.Runtime.NODEJS_20_X,
       memorySize: 256,
-      timeout: Duration.seconds(10),
+      timeout: Duration.seconds(15),
       logGroup: consumerLogGroup,
       bundling: {
         externalModules: [],
         minify: true,
         target: 'node20'
       },
-      environment: {}
+      environment: {
+        TABLE_NAME: table.tableName
+      },
+      tracing: lambda.Tracing.ACTIVE
     });
 
     consumer.addEventSource(
       new eventSources.SqsEventSource(queue, {
-        batchSize: 1
+        batchSize: 10,
+        reportBatchItemFailures: true // enables partial batch failure handling
       })
     );
+
+    topic.grantPublish(producer);
+    queue.grantConsumeMessages(consumer);
+    table.grantReadWriteData(consumer);
 
     const lambdas = [producer, consumer];
     lambdas.forEach((fn) => {
@@ -107,8 +135,6 @@ export class MessageHandlerStack extends Stack {
         })
       );
     });
-
-    topic.grantPublish(producer);
 
     new apigateway.LambdaRestApi(this, `${namePrefix}ApiGateway`, {
       restApiName: `${namePrefix}Api`,
