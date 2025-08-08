@@ -5,6 +5,7 @@ const sns = new SNSClient({});
 exports.handler = async (event) => {
   const path = event?.path || '/';
   const method = (event?.httpMethod || 'GET').toUpperCase();
+  console.log('Request received', JSON.stringify(event));
 
   if (method === 'GET' && path === '/health') {
     return { statusCode: 200, body: JSON.stringify({ ok: true }) };
@@ -45,6 +46,8 @@ exports.handler = async (event) => {
       MessageAttributes: attrs
     })
   );
+
+  console.log('Message pushed', JSON.stringify(out));
 
   return {
     statusCode: 200,

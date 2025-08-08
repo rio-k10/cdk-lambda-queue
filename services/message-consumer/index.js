@@ -9,7 +9,7 @@ const TABLE_NAME = process.env.TABLE_NAME;
 exports.handler = async (event) => {
   const records = event.Records || [];
   const failures = [];
-
+  console.log('Message consumed', JSON.stringify(event));
   for (const r of records) {
     try {
       const body = JSON.parse(r.body);

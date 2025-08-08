@@ -10,6 +10,54 @@ This project is a prototype AWS CDK stack that deploys an SQS queue with a Lambd
 - `POST /roboyo/requests` — send a Roboyo-like request payload
 - `GET /health` — health check
 
+## Lambda Producer Triggers
+
+Health check
+
+```json
+{
+  "resource": "/health",
+  "path": "/health",
+  "httpMethod": "GET",
+  "headers": {},
+  "queryStringParameters": null,
+  "body": null,
+  "isBase64Encoded": false
+}
+```
+
+UiPath document upload
+
+```json
+{
+  "resource": "/uipath",
+  "path": "/uipath",
+  "httpMethod": "POST",
+  "headers": {
+    "Content-Type": "application/json"
+  },
+  "queryStringParameters": null,
+  "body": "{\"documentId\":\"doc-123\",\"fileName\":\"test.pdf\",\"metadata\":{\"case\":\"CON29\"}}",
+  "isBase64Encoded": false
+}
+```
+
+Roboyo request
+
+```json
+{
+  "resource": "/roboyo",
+  "path": "/roboyo",
+  "httpMethod": "POST",
+  "headers": {
+    "Content-Type": "application/json"
+  },
+  "queryStringParameters": null,
+  "body": "{\"requestId\":\"req-123\",\"payload\":{\"type\":\"search\",\"query\":\"LLC1\"}}",
+  "isBase64Encoded": false
+}
+```
+
 ## Sample payloads
 
 ### UiPath

@@ -136,10 +136,22 @@ export class MessageHandlerStack extends Stack {
       );
     });
 
-    new apigateway.LambdaRestApi(this, `${namePrefix}ApiGateway`, {
+    const api = new apigateway.LambdaRestApi(this, `${namePrefix}ApiGateway`, {
       restApiName: `${namePrefix}Api`,
       handler: producer,
-      deployOptions: { stageName: 'dev' }
+      proxy: false,
+      deployOptions: { stageName: 'dev' },
+      defaultCorsPreflightOptions: {
+        allowOrigins: apigateway.Cors.ALL_ORIGINS,
+        allowHeaders: apigateway.Cors.DEFAULT_HEADERS,
+        allowMethods: ['GET', 'POST', 'OPTIONS']
+      }
     });
+
+    api.root.addResource('uipath').addMethod('POST');
+
+    api.root.addResource('roboyo').addMethod('POST');
+
+    api.root.addResource('health').addMethod('GET');
   }
 }
