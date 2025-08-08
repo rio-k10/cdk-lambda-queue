@@ -51,8 +51,18 @@ Make sure you have the following installed globally:
 
 ---
 
-- **Node.js (20.x via NVM)**  
-  We’ll use **NVM for Windows** via Chocolatey to make switching Node versions easier.
+- **Powershell Package Manager**  
+  [Install Choco]https://chocolatey.org/install)
+
+  ```powershell
+  choco --version
+  ```
+
+  Restart the powershell terminal
+
+---
+
+- **Node.js (20.x via NVM)**
 
   Install NVM for Windows:
 
@@ -82,21 +92,21 @@ Make sure you have the following installed globally:
 
 ---
 
+- **Make CLI** (Windows)  
+  Install via Chocolatey:
+
+  ```powershell
+  choco install make
+  ```
+
+---
+
 - **AWS CDK CLI**  
   [Install CDK](https://docs.aws.amazon.com/cdk/v2/guide/cli.html)
 
   ```powershell
   npm install -g aws-cdk
   cdk --version
-  ```
-
----
-
-- **Make CLI** (Windows)  
-  Install via Chocolatey:
-
-  ```powershell
-  choco install make
   ```
 
 ---
