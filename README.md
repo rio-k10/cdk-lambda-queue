@@ -40,31 +40,57 @@ Messages are published to SNS with `messageType` attribute (`UiPathDocument|Robo
 
 Make sure you have the following installed globally:
 
+---
+
 - **AWS CLI**  
   [Install AWS CLI](https://docs.aws.amazon.com/cli/latest/userguide/install-cliv2.html)
 
-  ```bash
+  ```powershell
   aws --version
   ```
 
-- **Node.js (>=16.x)**  
-  [Install Node.js](https://nodejs.org/en/)
+---
+
+- **Node.js (20.x via NVM)**  
+  We’ll use **NVM for Windows** via Chocolatey to make switching Node versions easier.
+
+  1. Install NVM for Windows:
+     ```powershell
+     choco install nvm
+     ```
+  2. Close and reopen your terminal.
+  3. Install Node.js 20.x:
+     ```powershell
+     nvm install 20
+     ```
+  4. Set Node.js 20.x as the default:
+     ```powershell
+     nvm use 20
+     nvm alias default 20
+     ```
+  5. Confirm version:
+     ```powershell
+     node -v
+     ```
+
+---
 
 - **AWS CDK CLI**  
   [Install CDK](https://docs.aws.amazon.com/cdk/v2/guide/cli.html)
 
-  ```bash
+  ```powershell
   npm install -g aws-cdk
   cdk --version
   ```
 
-- **Make CLI** (Windows)
+---
 
-  - [Chocolatey](https://community.chocolatey.org/packages/make):
+- **Make CLI** (Windows)  
+  Install via Chocolatey:
 
-    ```powershell
-    choco install make
-    ```
+  ```powershell
+  choco install make
+  ```
 
 ---
 
