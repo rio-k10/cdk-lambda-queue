@@ -54,24 +54,31 @@ Make sure you have the following installed globally:
 - **Node.js (20.x via NVM)**  
   We’ll use **NVM for Windows** via Chocolatey to make switching Node versions easier.
 
-  1. Install NVM for Windows:
-     ```powershell
-     choco install nvm
-     ```
-  2. Close and reopen your terminal.
-  3. Install Node.js 20.x:
-     ```powershell
-     nvm install 20
-     ```
-  4. Set Node.js 20.x as the default:
-     ```powershell
-     nvm use 20
-     nvm alias default 20
-     ```
-  5. Confirm version:
-     ```powershell
-     node -v
-     ```
+  Install NVM for Windows:
+
+  ```powershell
+  choco install nvm
+  ```
+
+  Close and reopen your terminal.
+  Install Node.js 20.x:
+
+  ```powershell
+  nvm install 20
+  ```
+
+  Set Node.js 20.x as the default:
+
+  ```powershell
+  nvm use 20
+  nvm alias default 20
+  ```
+
+  Confirm version:
+
+  ```powershell
+  node -v
+  ```
 
 ---
 
@@ -129,7 +136,7 @@ USER_INITIALS=XY        # Your initials or unique identifier
 
 ---
 
-## 📦 Project Structure
+## Project Structure
 
 ```
 .
@@ -144,7 +151,11 @@ USER_INITIALS=XY        # Your initials or unique identifier
 
 ---
 
-## 🧪 Commands (via Makefile)
+## Deployment
+
+Each user can deploy their own isolated version of the stack, thanks to the use of the `USER_INITIALS` variable for logical naming separation.
+
+### Commands (via Makefile)
 
 The following `make` commands are available for consistent workflows
 [NOTE: Make files rely on Git Bash, use the integrated VSCode terminal or search 'Git Bash' in the start menu]:
@@ -160,13 +171,12 @@ The following `make` commands are available for consistent workflows
 Run them like:
 
 ```bash
+make plan
 make apply
 ```
 
----
+When you are finished run:
 
-## 📂 Deployment Behavior
-
-Each user can deploy their own isolated version of the stack, thanks to the use of the `USER_INITIALS` variable for logical naming separation.
-
----
+```bash
+make destroy
+```
