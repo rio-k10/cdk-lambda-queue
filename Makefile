@@ -21,11 +21,9 @@ check-env:
 
 plan: check-env
 	npm run build
-	aws sts get-caller-identity --profile $(AWS_PROFILE)
 	cdk synth --profile $(AWS_PROFILE) -c user_initials=$(USER_INITIALS)
 
 apply: check-env
-	aws sts get-caller-identity --profile $(AWS_PROFILE)
 	cdk deploy --all --profile $(AWS_PROFILE) -c user_initials=$(USER_INITIALS)
 
 destroy: check-env
