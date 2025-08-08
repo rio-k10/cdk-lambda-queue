@@ -75,7 +75,7 @@ export class MessageHandlerStack extends Stack {
 
     const producer = new NodejsFunction(this, `${namePrefix}ProducerLambda`, {
       functionName: `${namePrefix}producer-lambda`,
-      entry: path.join(__dirname, '../../services/message-handler/index.js'),
+      entry: path.join(__dirname, '../../services/message-producer/index.ts'),
       handler: 'handler',
       runtime: lambda.Runtime.NODEJS_20_X,
       memorySize: 256,
@@ -94,7 +94,7 @@ export class MessageHandlerStack extends Stack {
 
     const consumer = new NodejsFunction(this, `${namePrefix}ConsumerLambda`, {
       functionName: `${namePrefix}consumer-lambda`,
-      entry: path.join(__dirname, '../../services/message-consumer/index.js'),
+      entry: path.join(__dirname, '../../services/message-consumer/index.ts'),
       handler: 'handler',
       runtime: lambda.Runtime.NODEJS_20_X,
       memorySize: 256,
